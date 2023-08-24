@@ -1,16 +1,44 @@
 const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
+const cors = require('cors');//解决跨域
+const bodyParser = require('body-parser');//转化json文件
 const mysql = require('mysql')
-const path = require('path');
-const { log } = require('console');
-
+const path = require('path');//处理文件路径
+const multer = require('multer');//处理文件上传
+const fs = require('fs');//操作文件，例如删除
 
 const app = express();
 const port = 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
+
+
+
+
+
+// 配置失物图片上传目录和文件名
+const lostStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'lostImages/'); // 上传的文件保存在 lostImages 目录
+    },
+    filename: function (req, file, cb) {
+        cb(null, file.originalname); // 使用原始文件名作为保存的文件名
+    }
+});
+//处理失物图片上传实例
+const uploadLostImage = multer({ storage: lostStorage });
+
+// 配置用户头像上传目录和文件名
+const usersAvatarStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'usersAvatar/'); // 上传的文件保存在 usersAvatar 目录
+    },
+    filename: function (req, file, cb) {
+        cb(null, file.originalname); // 使用原始文件名作为保存的文件名
+    }
+});
+//处理用户头像上传实例
+const uploadUserAvatar = multer({ storage: usersAvatarStorage });
 
 // MySQL连接配置
 const dbConfig = {
@@ -149,11 +177,55 @@ app.post('/changeInfo', (req, res) => {
                 res.status(500).json({ error: '更新失败' });
                 return;
             }
-            console.log('更新成功');
             res.status(200).json({ message: '更新成功' });
         }
     );
 })
+
+//处理用户头像上传(更改)
+app.post('/usersAvatar', uploadUserAvatar.single('file'), (req, res) => {
+    //文件上传成功后处理
+    const username = req.body.username;//获取用户名
+
+    const relativeAvatarPath = 'usersAvatar\\' + req.file.originalname;//获取上传头像所在地址的相对路径
+    console.log(relativeAvatarPath);
+
+    const getUserOldAvatarPath = 'SELECT avatar FROM users WHERE username = ?'// 获取用户旧头像地址
+
+    const updateAvatarPath = 'UPDATE users SET avatar = ? WHERE username = ?';//更新用户头像存储路径
+
+    connection.query(getUserOldAvatarPath, [username], (err, result) => {
+        if (err) {
+            console.log(err);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            const oldAvatarPath = result[0].avatar.replace('node\\', '');
+            if (oldAvatarPath) {// 区分新老用户，新用户没有头像，avatar为空时不执行
+                fs.unlink(oldAvatarPath, (err) => {
+                    if (err) {
+                        console.error('删除失败:', err);
+                    } else {
+                        handleFileUpdate(res, updateAvatarPath, relativeAvatarPath, username);
+                    }
+                });
+            } else {// 新用户没有头像，直接更新
+                handleFileUpdate(res, updateAvatarPath, relativeAvatarPath, username);
+            }
+        }
+    })
+})
+
+function handleFileUpdate(res, updatePath, relativePath, username) {//更新上传文件存储路径、文件上传后相对路径、用户名
+    //处理对应用户上传的文件路径
+    connection.query(updatePath, [relativePath, username], (err, result) => {
+        if (err) {
+            console.error('更新失败: ', err);
+            res.status(500).json({ error: '更新失败' });
+            return;
+        }
+        res.status(200).json({ path: relativePath });
+    })
+}
 
 // 处理图片路径，以便前端访问图片
 app.get('/image-proxy', (req, res) => {
