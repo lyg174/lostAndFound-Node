@@ -99,6 +99,9 @@ app.post('/register', (req, res) => {
     const { username, password } = req.body;
 
     const checkUserName = 'SELECT * FROM users WHERE username = ?';
+    const setUserInfo = 'INSERT INTO usersinfo (username, nickname) VALUES (?, ?)'
+    const updateUserInfo = 'UPDATE users SET nickname = ?'//更新用户昵称，默认为用户名
+
     connection.query(checkUserName, [username], (err, result) => {// 检查用户名是否存在
         if (err) {
             console.error(err);
@@ -112,7 +115,15 @@ app.post('/register', (req, res) => {
                     console.error(err);
                     res.status(500).json({ error: 'Internal server error' });
                 } else {
-                    res.status(200).json({ message: '注册成功' });
+                    connection.query(updateUserInfo, [username])//第一次创建时
+                    connection.query(setUserInfo, [username, username], (err, result) => {//创建用户个人信息,第一次创建时，昵称既是用户名
+                        if (err) {
+                            console.error(err);
+                            res.status(500).json({ error: 'Internal server error' });
+                        } else {
+                            res.status(200).json({ message: '注册成功' });
+                        }
+                    })
                 }
             });
         }
@@ -211,8 +222,9 @@ app.post('/usersAvatar', uploadUserAvatar.single('file'), (req, res) => {
             console.log(err);
             res.status(500).json({ error: 'Internal server error' });
         } else {
-            const oldAvatarPath = result[0].avatar.replace('node\\', '');
-            if (oldAvatarPath) {// 区分新老用户，新用户没有头像，avatar为空时不执行
+            if (result[0].avatar) { // 区分新老用户，新用户没有头像，avatar为空时不执行
+                const oldAvatarPath = result[0].avatar.replace('node\\', '');
+
                 fs.unlink(oldAvatarPath, (err) => {
                     if (err) {
                         console.error('删除失败:', err);
