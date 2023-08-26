@@ -16,6 +16,18 @@ app.use(bodyParser.json());
 
 
 
+// 配置招领物图片上传目录和文件名
+const foundStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'foundImages/'); // 上传的文件保存在 foundImages 目录
+    },
+    filename: function (req, file, cb) {
+        cb(null, file.originalname); // 使用原始文件名作为保存的文件名
+    }
+});
+//处理招领物图片上传实例
+const uploadFoundImage = multer({ storage: foundStorage });
+
 // 配置失物图片上传目录和文件名
 const lostStorage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -215,8 +227,8 @@ app.post('/usersAvatar', uploadUserAvatar.single('file'), (req, res) => {
     })
 })
 
+//处理对应用户上传的文件路径
 function handleFileUpdate(res, updatePath, relativePath, username) {//更新上传文件存储路径、文件上传后相对路径、用户名
-    //处理对应用户上传的文件路径
     connection.query(updatePath, [relativePath, username], (err, result) => {
         if (err) {
             console.error('更新失败: ', err);
@@ -226,6 +238,66 @@ function handleFileUpdate(res, updatePath, relativePath, username) {//更新上�
         res.status(200).json({ path: relativePath });
     })
 }
+
+//提供用户自己发布的招领物信息
+app.post('/userFoundList', (req, res) => {
+    const username = req.body.username;
+
+    const getUserFoundListInfo = 'SELECT * FROM foundlist WHERE username = ?';
+
+    connection.query(getUserFoundListInfo, [username], (err, result) => {
+        if (err) {
+            console.log(err);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            for (item of result) {
+                item.foundImageUrl = item.foundImageUrl.replace('node\\', '') //删除原图片路径中的'node\'
+            }
+
+            res.status(200).json({ data: result })
+        }
+    })
+})
+
+//处理用户发布的招领物信息
+app.post('/userPublishFound', uploadFoundImage.single('file'), (req, res) => {
+    const { foundDescribe, foundTime, foundPublishTime, myContact, username } = req.body;
+
+    const relativeImagePath = 'foundImages\\' + req.file.originalname;//获取上传图片的相对地址
+
+    const setUserPublishFoundInfo = 'INSERT INTO foundlist (foundImageUrl, foundDescribe, foundTime, foundPublishTime, foundersContact, username) VALUES (?, ?, ?, ?, ?, ?)';
+
+    connection.query(setUserPublishFoundInfo, [relativeImagePath, foundDescribe, foundTime, foundPublishTime, myContact, username], (err, result) => {
+        if (err) {
+            console.log(err);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            res.status(200).json({ message: '发布成功' })
+        }
+    })
+})
+
+//处理用户删除自己发布的招领信息
+app.post('/userDeletePublishFoundInfo', (req, res) => {
+    const url = req.body.url;
+
+    const delUserPublishFoundInfo = 'DELETE FROM foundlist WHERE foundImageUrl = ?';
+
+    fs.unlink(url, (err) => {
+        if (err) {
+            console.error('删除失败:', err);
+        } else {
+            connection.query(delUserPublishFoundInfo, [url], (err, result) => {
+                if (err) {
+                    console.log(err);
+                    res.status(500).json({ error: 'Internal server error' });
+                } else {
+                    res.status(200).json({ message: '删除成功' })
+                }
+            })
+        }
+    });
+})
 
 // 处理图片路径，以便前端访问图片
 app.get('/image-proxy', (req, res) => {
