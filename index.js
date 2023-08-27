@@ -100,7 +100,7 @@ app.post('/register', (req, res) => {
 
     const checkUserName = 'SELECT * FROM users WHERE username = ?';
     const setUserInfo = 'INSERT INTO usersinfo (username, nickname) VALUES (?, ?)'
-    const updateUserInfo = 'UPDATE users SET nickname = ?'//更新用户昵称，默认为用户名
+    const updateUserInfo = 'UPDATE users SET nickname = ? WHERE username = ?'//更新用户昵称，默认为用户名
 
     connection.query(checkUserName, [username], (err, result) => {// 检查用户名是否存在
         if (err) {
@@ -115,7 +115,7 @@ app.post('/register', (req, res) => {
                     console.error(err);
                     res.status(500).json({ error: 'Internal server error' });
                 } else {
-                    connection.query(updateUserInfo, [username])//第一次创建时
+                    connection.query(updateUserInfo, [username, username])//第一次创建时
                     connection.query(setUserInfo, [username, username], (err, result) => {//创建用户个人信息,第一次创建时，昵称既是用户名
                         if (err) {
                             console.error(err);
@@ -190,6 +190,8 @@ app.post('/changeInfo', (req, res) => {
 
     const updateUserInfo = `UPDATE usersinfo SET nickname=?, realName=?, gender=?, phoneNumber=? WHERE username=?`;
 
+    const updateUserAvatar = 'UPDATE users SET nickname=? WHERE username = ?';//更新用户表users里对应用户的昵称信息
+
     // 执行用户信息更新操作
     connection.query(
         updateUserInfo,
@@ -200,7 +202,14 @@ app.post('/changeInfo', (req, res) => {
                 res.status(500).json({ error: '更新失败' });
                 return;
             }
-            res.status(200).json({ message: '更新成功' });
+            connection.query(updateUserAvatar, [userInfo.nickname, userInfo.username], (err, result) => {
+                if (err) {
+                    console.error('更新失败: ', err);
+                    res.status(500).json({ error: '更新失败' });
+                } else {
+                    res.status(200).json({ message: '更新成功' });
+                }
+            })
         }
     );
 })
@@ -300,6 +309,66 @@ app.post('/userDeletePublishFoundInfo', (req, res) => {
             console.error('删除失败:', err);
         } else {
             connection.query(delUserPublishFoundInfo, [url], (err, result) => {
+                if (err) {
+                    console.log(err);
+                    res.status(500).json({ error: 'Internal server error' });
+                } else {
+                    res.status(200).json({ message: '删除成功' })
+                }
+            })
+        }
+    });
+})
+
+//提供用户自己发布的失物信息
+app.post('/userLostList', (req, res) => {
+    const username = req.body.username;
+
+    const getUserLostListInfo = 'SELECT * FROM lostlist WHERE username = ?';
+
+    connection.query(getUserLostListInfo, [username], (err, result) => {
+        if (err) {
+            console.log(err);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            for (item of result) {
+                item.lostImageUrl = item.lostImageUrl.replace('node\\', '') //删除原图片路径中的'node\'
+            }
+
+            res.status(200).json({ data: result })
+        }
+    })
+})
+
+//处理用户发布的失物信息
+app.post('/userPublishLost', uploadLostImage.single('file'), (req, res) => {
+    const { lostDescribe, lostTime, lostPublishTime, myContact, username } = req.body;
+
+    const relativeImagePath = 'lostImages\\' + req.file.originalname;//获取上传图片的相对地址
+
+    const setUserPublishLostInfo = 'INSERT INTO lostlist (lostImageUrl, lostDescribe, lostTime, lostPublishTime, losersContact, username) VALUES (?, ?, ?, ?, ?, ?)';
+
+    connection.query(setUserPublishLostInfo, [relativeImagePath, lostDescribe, lostTime, lostPublishTime, myContact, username], (err, result) => {
+        if (err) {
+            console.log(err);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            res.status(200).json({ message: '发布成功' })
+        }
+    })
+})
+
+//处理用户删除自己发布的失物信息
+app.post('/userDeletePublishLostInfo', (req, res) => {
+    const url = req.body.url;
+
+    const delUserPublishLostInfo = 'DELETE FROM lostlist WHERE lostImageUrl = ?';
+
+    fs.unlink(url, (err) => {
+        if (err) {
+            console.error('删除失败:', err);
+        } else {
+            connection.query(delUserPublishLostInfo, [url], (err, result) => {
                 if (err) {
                     console.log(err);
                     res.status(500).json({ error: 'Internal server error' });
