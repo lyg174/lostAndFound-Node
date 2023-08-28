@@ -380,6 +380,36 @@ app.post('/userDeletePublishLostInfo', (req, res) => {
     });
 })
 
+// (管理员)提供用户账户信息
+app.get('/usersAccountInfo', (req, res) => {
+    const getUsersAccountInfo = 'SELECT * FROM users';
+
+    connection.query(getUsersAccountInfo, [], (err, result) => {
+        if (err) {
+            console.log(err);
+            res.status(500).json({error: 'Internal server error'})
+        } else {
+            res.status(200).json({data: result})
+        }
+    })
+})
+
+// (管理员)删除用户账户信息
+app.post('/delUsersAccountInfo', (req, res) => {
+    const username = req.body.username;
+
+    const delUserAccount = 'DELETE FROM users WHERE username = ?';
+
+    connection.query(delUserAccount, [username], (err, result) => {
+        if (err) {
+            console.log(err);
+            res.status(500).json({error: 'Internal server error'})
+        } else {
+            res.status(200).json({message: '删除成功'})
+        }
+    })
+})
+
 // 处理图片路径，以便前端访问图片
 app.get('/image-proxy', (req, res) => {
     const imageUrl = req.query.url; // 前端通过查询参数传递图片路径
