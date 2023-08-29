@@ -298,7 +298,7 @@ app.post('/userPublishFound', uploadFoundImage.single('file'), (req, res) => {
     })
 })
 
-//处理用户删除自己发布的招领信息
+//处理用户删除自己发布的招领信息(管理员删除用户的发布的招领信息)
 app.post('/userDeletePublishFoundInfo', (req, res) => {
     const url = req.body.url;
 
@@ -358,7 +358,7 @@ app.post('/userPublishLost', uploadLostImage.single('file'), (req, res) => {
     })
 })
 
-//处理用户删除自己发布的失物信息
+//处理用户删除自己发布的失物信息(管理员删除用户的发布的失物信息)
 app.post('/userDeletePublishLostInfo', (req, res) => {
     const url = req.body.url;
 
@@ -387,9 +387,9 @@ app.get('/usersAccountInfo', (req, res) => {
     connection.query(getUsersAccountInfo, [], (err, result) => {
         if (err) {
             console.log(err);
-            res.status(500).json({error: 'Internal server error'})
+            res.status(500).json({ error: 'Internal server error' })
         } else {
-            res.status(200).json({data: result})
+            res.status(200).json({ data: result })
         }
     })
 })
@@ -398,17 +398,70 @@ app.get('/usersAccountInfo', (req, res) => {
 app.post('/delUsersAccountInfo', (req, res) => {
     const username = req.body.username;
 
-    const delUserAccount = 'DELETE FROM users WHERE username = ?';
+    const delUserAccount = 'DELETE FROM users WHERE username = ?';// 删除用户账户
 
-    connection.query(delUserAccount, [username], (err, result) => {
+    const delUserInfo = 'DELETE FROM usersinfo WHERE username = ?';// 删除用户个人信息
+
+    const getUserPublishLostImageUrl = 'SELECT lostImageUrl FROM lostlist WHERE username = ?'; // 获取用户发布的失物图片
+
+    const delUserPublishLostInfo = 'DELETE FROM lostlist WHERE username = ?'; // 删除用户发布的失物信息
+
+    const getUserPublishFoundImageUrl = 'SELECT foundImageUrl FROM foundlist WHERE username = ?'; // 获取用户发布的失物图片
+
+    const delUserPublishFoundInfo = 'DELETE FROM foundlist WHERE username = ?'; // 删除用户发布的招领信息
+
+    connection.query(getUserPublishLostImageUrl, [username], (err, result) => {// 处理删除用户发布的失物信息的逻辑
         if (err) {
             console.log(err);
-            res.status(500).json({error: 'Internal server error'})
+            res.status(500).json({ error: 'Internal server error' })
         } else {
-            res.status(200).json({message: '删除成功'})
+            for (let i = 0; i < result.length; i++) {// 删除所有用户发布的失物图片
+                const lostUrl = result[i].lostImageUrl;// 获取用户发布的失物图片
+                if (lostUrl) {
+                    fs.unlink(lostUrl, (err) => {
+                        if (err) {
+                            console.error('删除失败:', err);
+                        }
+                    })
+                }
+            }
+            handleUserAccount(res, delUserPublishLostInfo, username);
+        }
+    })
+
+
+    connection.query(getUserPublishFoundImageUrl, [username], (err, result) => {// 处理删除用户发布的招领信息的逻辑
+        if (err) {
+            console.log(err);
+            res.status(500).json({ error: 'Internal server error' })
+        } else {
+            for (let i = 0; i < result.length; i++) {// 删除所有用户发布的招领物图片
+                const foundUrl = result[i].foundImageUrl;// 获取用户发布的招领物图片
+                if (foundUrl) {
+                    fs.unlink(foundUrl, (err) => {
+                        if (err) {
+                            console.error('删除失败:', err);
+                        }
+                    })
+                }
+            }
+            handleUserAccount(res, delUserPublishFoundInfo, username);
+            handleUserAccount(res, delUserAccount, username);
+            handleUserAccount(res, delUserInfo, username);
+            res.status(200).json({ message: '删除成功' })
         }
     })
 })
+
+// 封装管理员删除用户账户信息所用到的数据库方法
+function handleUserAccount(res, sql, username) {
+    connection.query(sql, [username], (err, result) => {
+        if (err) {
+            console.log(err);
+            res.status(500).json({ error: 'Internal server error' })
+        }
+    })
+}
 
 // 处理图片路径，以便前端访问图片
 app.get('/image-proxy', (req, res) => {
