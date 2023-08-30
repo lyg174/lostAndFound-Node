@@ -282,13 +282,13 @@ app.post('/userFoundList', (req, res) => {
 
 //处理用户发布的招领物信息
 app.post('/userPublishFound', uploadFoundImage.single('file'), (req, res) => {
-    const { foundDescribe, foundTime, foundPublishTime, myContact, username } = req.body;
+    const { foundName, foundTime, foundPublishTime, descripText, myContact, username } = req.body;
 
     const relativeImagePath = 'foundImages\\' + req.file.originalname;//获取上传图片的相对地址
 
-    const setUserPublishFoundInfo = 'INSERT INTO foundlist (foundImageUrl, foundDescribe, foundTime, foundPublishTime, foundersContact, username) VALUES (?, ?, ?, ?, ?, ?)';
+    const setUserPublishFoundInfo = 'INSERT INTO foundlist (foundImageUrl, foundName, foundTime, foundPublishTime, descripText, foundersContact, username) VALUES (?, ?, ?, ?, ?, ?, ?)';
 
-    connection.query(setUserPublishFoundInfo, [relativeImagePath, foundDescribe, foundTime, foundPublishTime, myContact, username], (err, result) => {
+    connection.query(setUserPublishFoundInfo, [relativeImagePath, foundName, foundTime, foundPublishTime, descripText, myContact, username], (err, result) => {
         if (err) {
             console.log(err);
             res.status(500).json({ error: 'Internal server error' });
@@ -342,13 +342,13 @@ app.post('/userLostList', (req, res) => {
 
 //处理用户发布的失物信息
 app.post('/userPublishLost', uploadLostImage.single('file'), (req, res) => {
-    const { lostDescribe, lostTime, lostPublishTime, myContact, username } = req.body;
+    const { lostName, lostTime, lostPublishTime, descripText, myContact, username } = req.body;
 
     const relativeImagePath = 'lostImages\\' + req.file.originalname;//获取上传图片的相对地址
 
-    const setUserPublishLostInfo = 'INSERT INTO lostlist (lostImageUrl, lostDescribe, lostTime, lostPublishTime, losersContact, username) VALUES (?, ?, ?, ?, ?, ?)';
+    const setUserPublishLostInfo = 'INSERT INTO lostlist (lostImageUrl, lostName, lostTime, lostPublishTime, descripText, losersContact, username) VALUES (?, ?, ?, ?, ?, ?, ?)';
 
-    connection.query(setUserPublishLostInfo, [relativeImagePath, lostDescribe, lostTime, lostPublishTime, myContact, username], (err, result) => {
+    connection.query(setUserPublishLostInfo, [relativeImagePath, lostName, lostTime, lostPublishTime, descripText, myContact, username], (err, result) => {
         if (err) {
             console.log(err);
             res.status(500).json({ error: 'Internal server error' });
