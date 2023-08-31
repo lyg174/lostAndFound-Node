@@ -380,6 +380,47 @@ app.post('/userDeletePublishLostInfo', (req, res) => {
     });
 })
 
+//提供用户发布的反馈信息
+app.post('/userFeedbackInfo', (req, res) => {
+    const username = req.body.username;
+
+    const getUserFeedbackInfo = 'SELECT * FROM users_feedback WHERE username = ?'
+
+    connection.query(getUserFeedbackInfo, [username], (err, result) => {
+        if (err) {
+            console.log(err);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            res.status(200).json({ data: result })
+        }
+    })
+})
+
+//处理用户发布反馈信息
+app.post('/userPublishFeedbackInfo', (req, res) => {
+    const userFeedbackInfo = req.body;
+
+    const setUserFeedbackInfo = 'INSERT INTO users_feedback (username, name, gender, age, phoneNumber, email, suggestion, feedTime) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+
+    connection.query(setUserFeedbackInfo, [
+        userFeedbackInfo.username,
+        userFeedbackInfo.name,
+        userFeedbackInfo.gender,
+        userFeedbackInfo.age,
+        userFeedbackInfo.phoneNumber,
+        userFeedbackInfo.email,
+        userFeedbackInfo.suggestion,
+        userFeedbackInfo.feedTime
+    ], (err, result) => {
+        if (err) {
+            console.log(err);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            res.status(200).json({ message: '发布成功' })
+        }
+    })
+})
+
 // (管理员)提供用户账户信息
 app.get('/usersAccountInfo', (req, res) => {
     const getUsersAccountInfo = 'SELECT * FROM users';
