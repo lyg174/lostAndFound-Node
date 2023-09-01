@@ -421,6 +421,22 @@ app.post('/userPublishFeedbackInfo', (req, res) => {
     })
 })
 
+//处理用户删除自己发布的反馈信息(管理员删除用户的发布的反馈信息)
+app.post('/userDeleteFeedbackInfo', (req, res) => {
+    const suggestion = req.body.suggestion;
+
+    const delUserFeedbackInfo = 'DELETE FROM users_feedback WHERE suggestion = ?';
+
+    connection.query(delUserFeedbackInfo, [suggestion], (err, result) => {
+        if (err) {
+            console.log(err);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            res.status(200).json({ message: '删除成功' })
+        }
+    })
+})
+
 // (管理员)提供用户账户信息
 app.get('/usersAccountInfo', (req, res) => {
     const getUsersAccountInfo = 'SELECT * FROM users';
@@ -503,6 +519,20 @@ function handleUserAccount(res, sql, username) {
         }
     })
 }
+
+//(管理员)获取用户发布的反馈信息
+app.get('/users_feedback', (req, res) => {
+    const getUserFeedbackInfo = 'SELECT * FROM users_feedback';
+
+    connection.query(getUserFeedbackInfo, [], (err, result) => {
+        if (err) {
+            console.log(err);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            res.status(200).json({ data: result })
+        }
+    })
+})
 
 // 处理图片路径，以便前端访问图片
 app.get('/image-proxy', (req, res) => {
