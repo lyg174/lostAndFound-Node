@@ -131,6 +131,40 @@ app.post('/register', (req, res) => {
 })
 
 
+//处理用户修改密码(找回)
+app.post('/handlePassword', (req, res) => {
+    const { username, phoneNumber } = req.body;
+
+    const getUserInfo = 'SELECT phoneNumber FROM usersinfo WHERE username = ?';
+
+    connection.query(getUserInfo, [username], (err, result) => {
+        if (err) {
+            console.error(err);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            if (phoneNumber === result[0].phoneNumber) res.status(200).json({ data: true });
+            else res.status(401).json({ error: 信息错误 });
+        }
+    })
+})
+
+// 修改密码
+app.post('/changePassword', (req, res) => {
+    const {username, password} = req.body;
+
+    const updateUserPSW = 'UPDATE users SET password = ? WHERE username = ?'
+
+    connection.query(updateUserPSW, [password, username], (err, result) => {
+        if (err) {
+            console.error(err);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            res.status(200).json({message: '修改成功'})
+        }
+    })
+})
+
+
 //提供失主已经发布的失物信息
 app.get('/lostlist', (req, res) => {
 
