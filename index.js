@@ -143,7 +143,7 @@ app.post('/handlePassword', (req, res) => {
             res.status(500).json({ error: 'Internal server error' });
         } else {
             if (phoneNumber === result[0].phoneNumber) res.status(200).json({ data: true });
-            else res.status(401).json({ error: 信息错误 });
+            else res.status(401).json({ error: '信息错误' });
         }
     })
 })
