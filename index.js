@@ -150,7 +150,7 @@ app.post('/handlePassword', (req, res) => {
 
 // 修改密码
 app.post('/changePassword', (req, res) => {
-    const {username, password} = req.body;
+    const { username, password } = req.body;
 
     const updateUserPSW = 'UPDATE users SET password = ? WHERE username = ?'
 
@@ -159,7 +159,7 @@ app.post('/changePassword', (req, res) => {
             console.error(err);
             res.status(500).json({ error: 'Internal server error' });
         } else {
-            res.status(200).json({message: '修改成功'})
+            res.status(200).json({ message: '修改成功' })
         }
     })
 })
@@ -564,6 +564,36 @@ app.get('/users_feedback', (req, res) => {
             res.status(500).json({ error: 'Internal server error' });
         } else {
             res.status(200).json({ data: result })
+        }
+    })
+})
+
+//提供管理员发布的通知信息
+app.get('/getInfo', (req, res) => {
+    const getInfo = 'SELECT * FROM admin_sendInfo';
+
+    connection.query(getInfo, [], (err, result) => {
+        if (err) {
+            console.log(err);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            res.status(200).json({ message: result[0] })
+        }
+    })
+})
+
+// 处理管理员发布通知
+app.post('/sendMsg', (req, res) => {
+    const msg = req.body.msg;
+
+    const updateInfo = 'UPDATE admin_sendInfo SET information = ?';
+
+    connection.query(updateInfo, [msg], (err, result) => {
+        if (err) {
+            console.log(err);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            res.status(200).json({ message: '发布成功' })
         }
     })
 })
