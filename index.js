@@ -84,11 +84,18 @@ app.post('/login', (req, res) => {
             res.status(401).json({ error: '用户不存在' })
         } else {
             const user = result[0];
-            if (password === user.password) {
-                res.status(200).json({ data: result });
+            const login_status = user.login_status;
+
+            if (login_status === 'true') {// 判断是否允许登录
+                if (password === user.password) {
+                    res.status(200).json({ data: result });
+                } else {
+                    res.status(401).json({ error: '密码错误' });
+                }
             } else {
-                res.status(401).json({ error: '密码错误' });
+                res.status(401).json({ error: '你被禁止登录' });
             }
+            
         }
     })
 })
@@ -553,6 +560,22 @@ function handleUserAccount(res, sql, username) {
         }
     })
 }
+
+//(管理员)控制用户的登录权限
+app.post('/changeUsersLoginStatus', (req, res) => {
+    const {login_status, username} = req.body;
+
+    const changeLoginStatus = 'UPDATE users SET login_status = ? WHERE username = ?';
+
+    connection.query(changeLoginStatus, [login_status, username], (err, result) => {
+        if (err) {
+            console.log(err);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            res.status(200).json({ message: '改变成功' })
+        }
+    })
+})
 
 //(管理员)获取用户发布的反馈信息
 app.get('/users_feedback', (req, res) => {
