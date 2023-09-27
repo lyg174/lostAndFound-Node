@@ -577,6 +577,35 @@ app.post('/changeUsersLoginStatus', (req, res) => {
     })
 })
 
+//(管理员)改变用户发布的失物招领信息的展示状态
+app.post('/changeUsersPublishStatus', (req, res) => {
+    const info = req.body;
+
+    const changeLostPublishInfo = 'UPDATE lostlist SET publish_status = ? WHERE lostImageUrl = ?'// 失物信息
+
+    const changeFoundPublishInfo = 'UPDATE foundlist SET publish_status = ? WHERE foundImageUrl = ?'// 招领物信息
+
+    if (info.lostImageUrl) {
+        connection.query(changeLostPublishInfo, [info.publish_status, info.lostImageUrl], (err, result) => {
+            if (err) {
+                console.log(err);
+                res.status(500).json({ error: 'Internal server error' });
+            } else {
+                res.status(200).json({ message: '改变成功' })
+            }
+        })
+    } else if (info.foundImageUrl) {
+        connection.query(changeFoundPublishInfo, [info.publish_status, info.foundImageUrl], (err, result) => {
+            if (err) {
+                console.log(err);
+                res.status(500).json({ error: 'Internal server error' });
+            } else {
+                res.status(200).json({ message: '改变成功' })
+            }
+        })
+    }
+})
+
 //(管理员)获取用户发布的反馈信息
 app.get('/users_feedback', (req, res) => {
     const getUserFeedbackInfo = 'SELECT * FROM users_feedback';
