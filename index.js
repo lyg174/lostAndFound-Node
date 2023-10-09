@@ -116,8 +116,9 @@ app.post('/register', (req, res) => {
         } else if (result.length > 0) {// 返回的结果集中的行数,如存在则大于0
             res.status(400).json({ error: '用户名已存在' });
         } else {// 将注册信息存入数据库
-            const insertUserMsg = 'INSERT INTO users (username, password) VALUES (?, ?)';
-            connection.query(insertUserMsg, [username, password], (err, result) => {
+            const insertUserMsg = 'INSERT INTO users (username, password, login_status) VALUES (?, ?, ?)';
+            const login_status = 'true'//登录权限
+            connection.query(insertUserMsg, [username, password, login_status], (err, result) => {
                 if (err) {
                     console.error(err);
                     res.status(500).json({ error: 'Internal server error' });
