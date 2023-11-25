@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');//解决跨域
-const bodyParser = require('body-parser');//转化json文件
+const bodyParser = require('body-parser');//解析请求体json文件
 const mysql = require('mysql')
 const path = require('path');//处理文件路径
 const multer = require('multer');//处理文件上传
@@ -95,7 +95,7 @@ app.post('/login', (req, res) => {
             } else {
                 res.status(401).json({ error: '你被禁止登录' });
             }
-            
+
         }
     })
 })
@@ -344,24 +344,34 @@ app.post('/userPublishFound', uploadFoundImage.single('file'), (req, res) => {
 
 //处理用户删除自己发布的招领信息(管理员删除用户的发布的招领信息)
 app.post('/userDeletePublishFoundInfo', (req, res) => {
-    const url = req.body.url;
+    const id = req.body.id;
 
-    const delUserPublishFoundInfo = 'DELETE FROM foundlist WHERE foundImageUrl = ?';
+    const delUserPublishFoundInfo = 'DELETE FROM foundlist WHERE id = ?';
 
-    fs.unlink(url, (err) => {
+    const queryImageUrl = 'SELECT foundImageUrl FROM foundlist WHERE id = ?';
+
+    connection.query(queryImageUrl, [id], (err, result) => {
         if (err) {
-            console.error('删除失败:', err);
+            console.log(err);
+            res.status(500).json({ error: 'Internal server error' });
         } else {
-            connection.query(delUserPublishFoundInfo, [url], (err, result) => {
+            fs.unlink(result[0].foundImageUrl, (err) => {
                 if (err) {
-                    console.log(err);
-                    res.status(500).json({ error: 'Internal server error' });
+                    console.error('删除失败:', err);
                 } else {
-                    res.status(200).json({ message: '删除成功' })
+                    connection.query(delUserPublishFoundInfo, [id], (err, result) => {
+                        if (err) {
+                            console.log(err);
+                            res.status(500).json({ error: 'Internal server error' });
+                        } else {
+                            res.status(200).json({ message: '删除成功' })
+                        }
+                    })
                 }
-            })
+            });
         }
-    });
+    })
+
 })
 
 //提供用户自己发布的失物信息
@@ -406,24 +416,35 @@ app.post('/userPublishLost', uploadLostImage.single('file'), (req, res) => {
 
 //处理用户删除自己发布的失物信息(管理员删除用户的发布的失物信息)
 app.post('/userDeletePublishLostInfo', (req, res) => {
-    const url = req.body.url;
+    const id = req.body.id;
 
-    const delUserPublishLostInfo = 'DELETE FROM lostlist WHERE lostImageUrl = ?';
+    const delUserPublishLostInfo = 'DELETE FROM lostlist WHERE id = ?';
 
-    fs.unlink(url, (err) => {
+    const queryImageUrl = 'SELECT lostImageUrl FROM lostlist WHERE id = ?';
+
+    connection.query(queryImageUrl, [id], (err, result) => {
         if (err) {
-            console.error('删除失败:', err);
+            console.log(err);
+            res.status(500).json({ error: 'Internal server error' });
         } else {
-            connection.query(delUserPublishLostInfo, [url], (err, result) => {
+            fs.unlink(result[0].lostImageUrl, (err) => {
                 if (err) {
-                    console.log(err);
-                    res.status(500).json({ error: 'Internal server error' });
+                    console.error('删除失败:', err);
                 } else {
-                    res.status(200).json({ message: '删除成功' })
+                    connection.query(delUserPublishLostInfo, [id], (err, result) => {
+                        if (err) {
+                            console.log(err);
+                            res.status(500).json({ error: 'Internal server error' });
+                        } else {
+                            res.status(200).json({ message: '删除成功' })
+                        }
+                    })
                 }
-            })
+            });
         }
-    });
+    })
+
+
 })
 
 //提供用户发布的反馈信息
@@ -568,7 +589,7 @@ function handleUserAccount(res, sql, username) {
 
 //(管理员)控制用户的登录权限
 app.post('/changeUsersLoginStatus', (req, res) => {
-    const {login_status, username} = req.body;
+    const { login_status, username } = req.body;
 
     const changeLoginStatus = 'UPDATE users SET login_status = ? WHERE username = ?';
 
