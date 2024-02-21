@@ -5,6 +5,7 @@ const mysql = require('mysql')
 const path = require('path');//处理文件路径
 const multer = require('multer');//处理文件上传
 const fs = require('fs');//操作文件，例如删除
+const uuid = require('uuid');//配置唯一文件名
 
 const app = express();
 const port = 3000;
@@ -22,7 +23,12 @@ const foundStorage = multer.diskStorage({
         cb(null, 'foundImages/'); // 上传的文件保存在 foundImages 目录
     },
     filename: function (req, file, cb) {
-        cb(null, file.originalname); // 使用原始文件名作为保存的文件名
+        const uniqueFilename = uuid.v4(); // 使用uuid生成唯一文件名
+        const fileExtension = path.extname(file.originalname); // 获取文件扩展名
+        const finalFilename = `${uniqueFilename}${fileExtension}`;
+        cb(null, finalFilename);
+        // 将新的文件名传递给调用方
+        req.newFilename = finalFilename;
     }
 });
 //处理招领物图片上传实例
@@ -34,7 +40,12 @@ const lostStorage = multer.diskStorage({
         cb(null, 'lostImages/'); // 上传的文件保存在 lostImages 目录
     },
     filename: function (req, file, cb) {
-        cb(null, file.originalname); // 使用原始文件名作为保存的文件名
+        const uniqueFilename = uuid.v4(); // 使用uuid生成唯一文件名
+        const fileExtension = path.extname(file.originalname); // 获取文件扩展名
+        const finalFilename = `${uniqueFilename}${fileExtension}`;
+        cb(null, finalFilename);
+        // 将新的文件名传递给调用方
+        req.newFilename = finalFilename;
     }
 });
 //处理失物图片上传实例
@@ -46,7 +57,12 @@ const usersAvatarStorage = multer.diskStorage({
         cb(null, 'usersAvatar/'); // 上传的文件保存在 usersAvatar 目录
     },
     filename: function (req, file, cb) {
-        cb(null, file.originalname); // 使用原始文件名作为保存的文件名
+        const uniqueFilename = uuid.v4(); // 使用uuid生成唯一文件名
+        const fileExtension = path.extname(file.originalname); // 获取文件扩展名
+        const finalFilename = `${uniqueFilename}${fileExtension}`;
+        cb(null, finalFilename);
+        // 将新的文件名传递给调用方
+        req.newFilename = finalFilename;
     }
 });
 //处理用户头像上传实例
@@ -261,7 +277,7 @@ app.post('/usersAvatar', uploadUserAvatar.single('file'), (req, res) => {
     //文件上传成功后处理
     const username = req.body.username;//获取用户名
 
-    const relativeAvatarPath = 'usersAvatar\\' + req.file.originalname;//获取上传头像所在地址的相对路径
+    const relativeAvatarPath = 'usersAvatar\\' + req.newFilename;//获取上传头像所在地址的相对路径
     console.log(relativeAvatarPath);
 
     const getUserOldAvatarPath = 'SELECT avatar FROM users WHERE username = ?'// 获取用户旧头像地址
@@ -328,7 +344,7 @@ app.post('/userPublishFound', uploadFoundImage.single('file'), (req, res) => {
 
     const publish_status = 'false'; // 未审核状态
 
-    const relativeImagePath = 'foundImages\\' + req.file.originalname;//获取上传图片的相对地址
+    const relativeImagePath = 'foundImages\\' + req.newFilename;//获取上传图片的相对地址
 
     const setUserPublishFoundInfo = 'INSERT INTO foundlist (foundImageUrl, foundName, foundTime, foundPublishTime, descripText, foundersContact, username, publish_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
 
@@ -400,7 +416,7 @@ app.post('/userPublishLost', uploadLostImage.single('file'), (req, res) => {
 
     const publish_status = 'false'; // 未审核状态
 
-    const relativeImagePath = 'lostImages\\' + req.file.originalname;//获取上传图片的相对地址
+    const relativeImagePath = 'lostImages\\' + req.newFilename;//获取上传图片的相对地址
 
     const setUserPublishLostInfo = 'INSERT INTO lostlist (lostImageUrl, lostName, lostTime, lostPublishTime, descripText, losersContact, username, publish_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
 
