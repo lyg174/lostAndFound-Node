@@ -358,6 +358,22 @@ app.post('/userPublishFound', uploadFoundImage.single('file'), (req, res) => {
     })
 })
 
+//处理用户自己发布的招领物寻回状态
+app.post('/userPublishFoundChangeStatus', (req, res) => {
+    const {status, id} = req.body
+    console.log(status, id);
+    const updateUserPublishFoundStatus = 'UPDATE foundlist SET status = ? WHERE id = ?'
+
+    connection.query(updateUserPublishFoundStatus, [status, id], (err, result) => {
+        if (err) {
+            console.log(err);
+        } else {
+            res.status(200).json({ message: '状态更新成功' })
+        }
+    })
+
+})
+
 //处理用户删除自己发布的招领信息(管理员删除用户的发布的招领信息)
 app.post('/userDeletePublishFoundInfo', (req, res) => {
     const id = req.body.id;
@@ -428,6 +444,22 @@ app.post('/userPublishLost', uploadLostImage.single('file'), (req, res) => {
             res.status(200).json({ message: '发布成功' })
         }
     })
+})
+
+//处理用户自己发布的失物认领状态
+app.post('/userPublishLostChangeStatus', (req, res) => {
+    const {status, id} = req.body
+    console.log(status, id);
+    const updateUserPublishLostStatus = 'UPDATE lostlist SET status = ? WHERE id = ?'
+
+    connection.query(updateUserPublishLostStatus, [status, id], (err, result) => {
+        if (err) {
+            console.log(err);
+        } else {
+            res.status(200).json({ message: '状态更新成功' })
+        }
+    })
+
 })
 
 //处理用户删除自己发布的失物信息(管理员删除用户的发布的失物信息)
@@ -688,6 +720,22 @@ app.post('/sendMsg', (req, res) => {
             res.status(500).json({ error: 'Internal server error' });
         } else {
             res.status(200).json({ message: '发布成功' })
+        }
+    })
+})
+
+// (管理员)获取用户账户密码
+app.get('/getUserAccountInfo', (req, res) => {
+    const { username } = req.query
+    
+    const getUserAccountInfo = 'SELECT * FROM users WHERE username = ?'
+
+    connection.query(getUserAccountInfo, [username], (err, result) => {
+        if (err) {
+            console.log(err);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            res.status(200).json({ data: result[0].password })
         }
     })
 })
